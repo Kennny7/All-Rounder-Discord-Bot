@@ -1,0 +1,143 @@
+import os
+my_secret = os.environ["TOKEN"]
+import time
+from keep_alive import keep_alive
+from discord.ext.commands import Bot
+import discord
+from discord.ext import commands
+import random
+
+description = '''bla bla bla'''
+
+intents = discord.Intents.default()
+intents.members = True
+
+bot = commands.Bot(command_prefix='!!', description=description, intents=intents)
+
+@bot.event
+async def on_ready():
+    print('Logged in as')
+    print(bot.user.name)
+    print(bot.user.id)
+    print('------')
+
+@bot.command('add')
+async def add(ctx, left: int, right: int):
+    """Adds two numbers together."""
+    await ctx.send(left + right)
+
+@bot.command('roll')
+async def roll(ctx, dice: str):
+    """Rolls a dice in NdN format."""
+    try:
+        rolls, limit = map(int, dice.split('d'))
+    except Exception:
+        await ctx.send('Format has to be in NdN!')
+        return
+
+    result = ', '.join(str(random.randint(1, limit)) for r in range(rolls))
+    await ctx.send(result)
+
+@bot.command('choices', description='For when you wanna settle the score some other way')
+async def choose(ctx, *choices: str):
+    """Chooses between multiple choices."""
+    await ctx.send(random.choice(choices))
+
+@bot.command('rpt')
+async def repeat(ctx, times: int, content='repeating...'):
+    """Repeats a message multiple times."""
+    for i in range(times):
+        await ctx.send(content)
+
+@bot.command('Wlcm')
+async def joined(ctx, member: discord.Member):
+    await ctx.channel.purge(limit=1)
+    """Says when a member joined."""
+    await ctx.send('{0.name} joined in {0.joined_at}'.format(member))
+
+@bot.group('cool')
+async def cool(ctx):
+    await ctx.channel.purge(limit=1)
+    """Says if a user is cool.
+    In reality this just checks if a subcommand is being invoked.
+    """
+    if ctx.invoked_subcommand is None:
+        await ctx.send('No, {0.subcommand_passed} is not cool'.format(ctx))
+
+@cool.command(name='bot')
+async def _bot(ctx):
+    """Is the bot cool?"""
+    await ctx.send('Yes, the bot is cool.')
+
+@bot.event
+async def on_message(message):
+    guild = message.guild
+    if guild:
+        path = "chatlogs.txt".format(guild.id)  
+        with open(path, 'a+') as f:
+            print("{0.guild} : {0.channel} : {0.author.name} : {0.content}".format(message), file=f)
+    await bot.process_commands(message)
+
+
+
+class dm:
+
+ @bot.command('dm', pass_context=True)
+ #async def dm(ctx, user: discord.User, *, message=None):
+ async def dm_command(ctx, user: discord.User, *, message=None):
+    try:
+    
+        await ctx.channel.purge(limit=1)
+        message = message
+    #await ctx.send(message)
+    #await bot.process_commands(message)
+    #await ctx.send(message)
+    #await message.author.dm_channel.send(message)
+    #await ctx.dm_channel.send(message)    
+        await user.send(message)
+    
+    except Exception:
+        await user.send(message)  
+ 
+ @bot.command('reply', pass_context=True)
+ async def dm_command(ctx, *, message=None):
+    
+
+     message = message
+     await user.send(message)      
+      #try:
+      #if isinstance(ctx.channel, discord.channel.DMChannel):
+          #do stuff here
+      #await bot.get_user_info(memberID)
+      #await user.send(message)
+      #time.sleep(30)
+      #except Exception:
+      #await ctx.send('No response detected')
+      #return
+
+@bot.command('spyinfo', pass_context=True)
+@commands.has_role('Super Dongsaeng')
+#async def sendtext(ctx, arg1, arg2):
+async def sendtext(ctx, user: discord.User):    
+    await ctx.channel.purge(limit=1)
+    # write to file
+    #with open("chatlogs.txt", "w") as file:
+    #    file.write('arg1 = {0}, arg2 = {1}'.format(arg1, arg2))
+    
+    # send file to Discord in message
+    with open("chatlogs.txt", "rb") as file:
+        await user.send("Your file is:", file=discord.File(file, "chatlogs.txt"))
+    
+@bot.command('wipe')
+@commands.has_role('Super Dongsaeng')
+async def cleardm(ctx, user: discord.User):
+    await ctx.channel.purge(limit=1) 
+    #remove '#' if you want the bot to delete the command you typed in the discord server
+    async for message in user.history():
+        if message.author == client.user:
+            await message.delete()
+
+
+keep_alive()    
+
+bot.run(os.getenv('TOKEN'))
